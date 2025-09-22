@@ -102,6 +102,23 @@ Download a video or audio from a URL.
 - `--verbose`, `-v`: Verbose output
 - `--quiet`, `-q`: Quiet mode
 
+### `playlist`
+
+Download a playlist from a URL.
+
+**Options:**
+- `--output-dir`, `-o`: Output directory (default: current directory)
+- `--max-items`, `-n`: Maximum number of items to download (default: 10)
+- `--start`, `-s`: Start downloading from this item number (default: 1)
+- `--end`, `-e`: Stop downloading at this item number
+- `--format`, `-f`: Video format (default: "best")
+- `--audio-only`, `-a`: Extract audio only
+- `--audio-format`: Audio format (default: "mp3")
+- `--metadata`, `-m`: Save metadata and thumbnail
+- `--skip-rights-check`: Skip rights confirmation (not recommended)
+- `--verbose`, `-v`: Verbose output
+- `--quiet`, `-q`: Quiet mode
+
 ### `info`
 
 Get information about a video without downloading.
