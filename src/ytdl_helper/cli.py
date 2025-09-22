@@ -203,6 +203,136 @@ def info(
 
 
 @app.command()
+def playlist(
+    url: Annotated[str, typer.Argument(help="Playlist URL to download")],
+    output_dir: Annotated[Optional[Path], typer.Option(
+        "--output-dir", "-o", help="Output directory"
+    )] = None,
+    max_items: Annotated[int, typer.Option(
+        "--max-items", "-n", help="Maximum number of items to download"
+    )] = 10,
+    start_item: Annotated[int, typer.Option(
+        "--start", "-s", help="Start downloading from this item number"
+    )] = 1,
+    end_item: Annotated[Optional[int], typer.Option(
+        "--end", "-e", help="Stop downloading at this item number"
+    )] = None,
+    format: Annotated[str, typer.Option(
+        "--format", "-f", help="Video format (best, worst, mp4, etc.)"
+    )] = "best",
+    audio_only: Annotated[bool, typer.Option(
+        "--audio-only", "-a", help="Extract audio only"
+    )] = False,
+    audio_format: Annotated[str, typer.Option(
+        "--audio-format", help="Audio format (mp3, wav, etc.)"
+    )] = "mp3",
+    metadata: Annotated[bool, typer.Option(
+        "--metadata", "-m", help="Save metadata and thumbnail"
+    )] = False,
+    skip_rights_check: Annotated[bool, typer.Option(
+        "--skip-rights-check", help="Skip rights confirmation (not recommended)"
+    )] = False,
+    verbose: Annotated[bool, typer.Option(
+        "--verbose", "-v", help="Verbose output"
+    )] = False,
+    quiet: Annotated[bool, typer.Option(
+        "--quiet", "-q", help="Quiet mode"
+    )] = False,
+) -> None:
+    """Download a playlist from URL."""
+    try:
+        # Validate URL
+        if not validate_url(url):
+            print_error("Invalid URL provided")
+            raise typer.Exit(1)
+
+        # Create settings
+        settings = Settings()
+        settings.verbose = verbose
+        settings.quiet = quiet
+        settings.user.skip_rights_check = skip_rights_check
+        settings.user.allow_playlist_download = True
+        settings.user.max_playlist_items = max_items
+        
+        if output_dir:
+            settings.download.output_dir = output_dir
+        if format != "best":
+            settings.download.format = format
+        if audio_only:
+            settings.download.extract_audio = True
+            settings.download.audio_format = audio_format
+        if metadata:
+            settings.metadata.write_info_json = True
+            settings.metadata.write_thumbnail = True
+
+        # Create downloader
+        downloader = VideoDownloader(settings)
+
+        # Set up progress callback
+        def progress_callback(data: dict) -> None:
+            if not quiet:
+                tui.progress.update_progress(data)
+
+        downloader.set_progress_callback(progress_callback)
+
+        # Get playlist info first
+        if not quiet:
+            tui.show_welcome()
+            
+        playlist_info = downloader.get_video_info(url)
+        
+        if not playlist_info.is_playlist:
+            print_error("URL is not a playlist")
+            raise typer.Exit(1)
+            
+        if not quiet:
+            tui.info_display.show_video_info(playlist_info)
+            tui.info_display.show_rights_warning()
+            
+            if not downloader.validate_rights(playlist_info):
+                print_error("Rights confirmation required")
+                raise typer.Exit(1)
+                
+            tui.progress.start_download(f"Playlist: {playlist_info.title}")
+        
+        try:
+            downloaded_files = downloader.download_playlist(
+                url, 
+                max_items=max_items,
+                start_item=start_item,
+                end_item=end_item
+            )
+            
+            if not quiet:
+                tui.progress.finish_download()
+                tui.info_display.show_download_summary(downloaded_files)
+                
+            print_success(f"Downloaded {len(downloaded_files)} files from playlist")
+            
+        except RightsError as e:
+            if not quiet:
+                tui.progress.show_error(str(e))
+            print_error(str(e))
+            raise typer.Exit(1)
+
+    except DownloadError as e:
+        if not quiet:
+            tui.show_error("Download failed", str(e))
+        print_error(f"Download failed: {str(e)}")
+        raise typer.Exit(1)
+    except KeyboardInterrupt:
+        if not quiet:
+            tui.show_error("Download cancelled by user")
+        print_error("Download cancelled by user")
+        raise typer.Exit(1)
+    except Exception as e:
+        if not quiet:
+            tui.show_error("Unexpected error", str(e))
+        print_error(f"Unexpected error: {str(e)}")
+        raise typer.Exit(1)
+
+
+@app.command()
 def config(
     show: Annotated[bool, typer.Option(
         "--show", "-s", help="Show current configuration"

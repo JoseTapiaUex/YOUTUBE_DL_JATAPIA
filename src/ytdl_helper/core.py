@@ -187,23 +187,38 @@ class VideoDownloader:
         # Apply limits
         max_items = max_items or self.settings.user.max_playlist_items
         if end_item is None:
-            end_item = start_item + max_items - 1
+            end_item = min(start_item + max_items - 1, video_info.playlist_count)
+
+        # Ensure we don't exceed playlist bounds
+        start_item = max(1, start_item)
+        end_item = min(end_item, video_info.playlist_count)
+
+        logger.info(f"Downloading playlist items {start_item} to {end_item} of {video_info.playlist_count}")
 
         # Update settings for playlist
         self.settings.download.playlist_start = start_item
         self.settings.download.playlist_end = end_item
 
         ydl_opts = self.settings.get_ytdlp_options()
-        ydl_opts["progress_hooks"] = [ProgressHook(self.progress_callback)]
-
+        
         downloaded_files: List[Path] = []
 
         def playlist_progress_hook(d: Dict[str, Any]) -> None:
             """Progress hook for playlist downloads."""
-            if d["status"] == "finished":
+            if d["status"] == "downloading":
+                # Show progress for individual items
+                title = d.get("filename", "Unknown")
+                if "playlist_index" in d:
+                    title = f"[{d['playlist_index']}/{video_info.playlist_count}] {title}"
+                logger.info(f"Downloading: {title}")
+            elif d["status"] == "finished":
                 filename = d.get("filename", "")
                 if filename:
                     downloaded_files.append(Path(filename))
+                    logger.info(f"Completed: {filename}")
+            elif d["status"] == "error":
+                logger.error(f"Download error: {d.get('error', 'Unknown error')}")
+            
             if self.progress_callback:
                 self.progress_callback(d)
 

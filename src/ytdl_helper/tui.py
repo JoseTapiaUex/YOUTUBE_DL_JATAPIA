@@ -260,13 +260,22 @@ respecting copyright and user rights.
 [cyan]Download audio only:[/cyan]
   ytdl-helper download --audio-only https://youtube.com/watch?v=VIDEO_ID
 
+[cyan]Download playlist:[/cyan]
+  ytdl-helper playlist https://youtube.com/playlist?list=PLAYLIST_ID
+
+[cyan]Download playlist with limits:[/cyan]
+  ytdl-helper playlist --max-items 5 --start 1 --end 5 URL
+
+[cyan]Download playlist audio only:[/cyan]
+  ytdl-helper playlist --audio-only --max-items 10 URL
+
 [cyan]List available formats:[/cyan]
   ytdl-helper info https://youtube.com/watch?v=VIDEO_ID
 
-[cyan]Download playlist (limited):[/cyan]
-  ytdl-helper download --playlist --max-items 5 https://youtube.com/playlist?list=PLAYLIST_ID
-
-[bold]Options:[/bold]
+[bold]Playlist Options:[/bold]
+  --max-items N         Maximum number of items to download
+  --start N             Start downloading from item N
+  --end N               Stop downloading at item N
   --output-dir PATH     Output directory
   --format FORMAT       Video format (best, worst, mp4, etc.)
   --audio-only          Extract audio only

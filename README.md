@@ -61,10 +61,14 @@ ytdl-helper download \
   --output-dir /path/to/downloads \
   https://youtube.com/watch?v=VIDEO_ID
 
+# Download playlist
+ytdl-helper playlist https://youtube.com/playlist?list=PLAYLIST_ID
+
 # Download playlist with limits
-ytdl-helper download \
-  --playlist \
+ytdl-helper playlist \
   --max-items 5 \
+  --start 1 \
+  --end 5 \
   https://youtube.com/playlist?list=PLAYLIST_ID
 
 # Save metadata and thumbnail
